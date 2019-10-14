@@ -13,9 +13,13 @@ class HydraSource  {
       shape: [opts.width, opts.height]
     })
     this.pb = opts.pb
+    this.element = null;
+    this.mediaDiv = null;
   }
 
+  // Initialize source with custom options.
   init (opts) {
+    this.reset();
     if (opts.src) {
       this.src = opts.src
       this.tex = this.regl.texture(this.src)
@@ -23,17 +27,21 @@ class HydraSource  {
     if(opts.dynamic) this.dynamic = opts.dynamic
   }
 
+  // Initialize source from a webcam.
   initCam (index) {
     const self = this
+    self.clear();
     Webcam(index).then((response) => {
       self.src = response.video
       self.tex = self.regl.texture(self.src)
     })
   }
 
+  // Initialize source from RTC stream.
   initStream (streamName) {
     console.log("initing stream!", streamName)
     let self = this
+    self.clear();
     if (streamName && this.pb) {
         this.pb.initSource(streamName)
 
@@ -47,13 +55,60 @@ class HydraSource  {
     }
   }
 
+  // Initialize source using Chrome screen-capture-extension to show user's desktop.
   initScreen () {
     const self = this
+    self.clear();
     Screen().then(function (response) {
        self.src = response.video
        self.tex = self.regl.texture(self.src)
      //  console.log("received screen input")
      })
+  }
+
+  // The media <div> element holds external media. Placing it inside the DOM
+  // means that it gets correctly cleaned up when the patch code changes.
+  _getMediaDiv () {
+    if (this.mediaDiv == null) {
+      this.mediaDiv = document.createElement('div')
+      this.mediaDiv.setAttribute('id', 'media-div')
+      this.mediaDiv.setAttribute('style', 'visibility: hidden;')
+      document.body.append(this.mediaDiv)
+    }
+    return this.mediaDiv;
+  }
+
+  // Initialize source from an image URL.
+  //
+  // The image must be hosted on the Hydra server, or have appropriate CORS headers.
+  initImage (url) {
+    this.clear();
+    var element = document.createElement('img')
+    this._getMediaDiv().appendChild(element);
+    element.src = url
+    element.crossOrigin = 'anonymous'
+    this.src = this.element = element
+    this.tex = this.regl.texture(this.src)
+  }
+
+  // Initialize source from an video URL.
+  //
+  // The video must be hosted on the Hydra server, or have appropriate CORS headers.
+  initVideo (url, muted) {
+    let self = this
+    self.clear();
+    var element = document.createElement('video')
+    this._getMediaDiv().appendChild(element);
+    element.src = url
+    element.crossOrigin = 'anonymous'
+    element.loop = true
+    element.muted = true
+    element.addEventListener('canplaythrough', (event) => {
+      self.src = self.element = element
+      self.tex = self.regl.texture(self.src)
+      self.dynamic = true;
+      element.play();
+    })
   }
 
   resize (width, height) {
@@ -62,7 +117,12 @@ class HydraSource  {
   }
 
   clear () {
+    if (this.element) {
+      this.element.remove()
+      this.element = null;
+    }
     this.src = null
+    this.tex = null;
     this.tex = this.regl.texture({
       shape: [this.width, this.height]
     })
