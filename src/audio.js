@@ -44,7 +44,10 @@ class Audio {
     this.ctx.fillStyle="#DFFFFF"
     this.ctx.strokeStyle="#0ff"
     this.ctx.lineWidth=0.5
+  }
 
+  // Initialize audio analyzer using a microphone accessed from the browser.
+  initMic() {
     window.navigator.mediaDevices.getUserMedia({video: false, audio: true})
       .then((stream) => {
         console.log('got mic stream', stream)
