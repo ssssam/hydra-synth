@@ -112,6 +112,7 @@ class HydraSynth {
 
   _initAudio () {
     this.audio = new Audio({
+      mediadiv: this._getMediaDiv(),
       numBins: 4
     })
     if(this.makeGlobal) window.a = this.audio

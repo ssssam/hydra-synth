@@ -2,6 +2,7 @@ const Meyda = require('meyda')
 
 class Audio {
   constructor ({
+    mediadiv = null,
     numBins = 4,
     cutoff = 2,
     smooth = 0.4,
@@ -9,6 +10,10 @@ class Audio {
     scale = 10,
     isDrawing = false
   }) {
+    this.context = null;
+
+    this.mediadiv = mediadiv;
+
     this.vol = 0
     this.scale = scale
     this.max = max
@@ -48,27 +53,62 @@ class Audio {
 
   // Initialize audio analyzer using a microphone accessed from the browser.
   initMic() {
+    this.clear();
     window.navigator.mediaDevices.getUserMedia({video: false, audio: true})
       .then((stream) => {
         console.log('got mic stream', stream)
-        this.stream = stream
-        this.context = new AudioContext()
-        //  this.context = new AudioContext()
-        let audio_stream = this.context.createMediaStreamSource(stream)
+        this.context = new AudioContext();
+        let audio_node = this.context.createMediaStreamSource(stream)
 
-        console.log(this.context)
-        this.meyda = Meyda.createMeydaAnalyzer({
-          audioContext: this.context,
-          source: audio_stream,
-          featureExtractors: [
-            'loudness',
-            //  'perceptualSpread',
-            //  'perceptualSharpness',
-            //  'spectralCentroid'
-          ]
-        })
+        this.createMeydaAnalyzer(audio_node);
       })
       .catch((err) => console.log('ERROR', err))
+  }
+
+  initAudio(url) {
+    this.clear();
+    let self = this
+    let element = self.element = document.createElement('audio')
+    this.mediadiv.appendChild(element);
+    element.src = url;
+    element.crossOrigin = 'anonymous'
+    element.addEventListener('canplaythrough', (event) => {
+      console.log('loaded audio file', url)
+
+      this.context = new AudioContext();
+      let audio_node = this.context.createMediaElementSource(element);
+      this.createMeydaAnalyzer(audio_node);
+    })
+  }
+
+  clear () {
+    if (this.context) {
+      this.context.close();
+      this.context = null;
+    }
+    if (this.element) {
+      this.element.remove()
+      this.element = null;
+    }
+
+    let numBins = this.bins.length;
+    this.bins = Array(numBins).fill(0)
+
+    if (this.isDrawing)
+      this.draw()
+  }
+
+  createMeydaAnalyzer (audio_node) {
+    this.meyda = Meyda.createMeydaAnalyzer({
+      audioContext: this.context,
+      source: audio_node,
+      featureExtractors: [
+        'loudness',
+        //  'perceptualSpread',
+        //  'perceptualSharpness',
+        //  'spectralCentroid'
+      ]
+    })
   }
 
   detectBeat (level) {
