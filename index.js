@@ -266,8 +266,20 @@ class HydraSynth {
     this.bpm = bpm
   }
 
+  // The media <div> element holds external media. Placing it inside the DOM
+  // means that it gets correctly cleaned up when the patch code changes.
+  _getMediaDiv () {
+    if (this.mediaDiv == null) {
+      this.mediaDiv = document.createElement('div')
+      this.mediaDiv.setAttribute('id', 'media-div')
+      this.mediaDiv.setAttribute('style', 'visibility: hidden;')
+      document.body.append(this.mediaDiv)
+    }
+    return this.mediaDiv;
+  }
+
   createSource () {
-    let s = new Source({regl: this.regl, pb: this.pb, width: this.width, height: this.height})
+    let s = new Source({regl: this.regl, pb: this.pb, mediadiv: this.mediadiv, width: this.width, height: this.height})
     if(this.makeGlobal) {
       window['s' + this.s.length] = s
     }

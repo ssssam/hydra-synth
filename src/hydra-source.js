@@ -5,6 +5,7 @@ class HydraSource  {
 
   constructor (opts) {
     this.regl = opts.regl
+    this.mediadiv = opts.mediadiv
     this.src = null
     this.dynamic = true
     this.width = opts.width
@@ -14,7 +15,6 @@ class HydraSource  {
     })
     this.pb = opts.pb
     this.element = null;
-    this.mediaDiv = null;
   }
 
   // Initialize source with custom options.
@@ -66,25 +66,13 @@ class HydraSource  {
      })
   }
 
-  // The media <div> element holds external media. Placing it inside the DOM
-  // means that it gets correctly cleaned up when the patch code changes.
-  _getMediaDiv () {
-    if (this.mediaDiv == null) {
-      this.mediaDiv = document.createElement('div')
-      this.mediaDiv.setAttribute('id', 'media-div')
-      this.mediaDiv.setAttribute('style', 'visibility: hidden;')
-      document.body.append(this.mediaDiv)
-    }
-    return this.mediaDiv;
-  }
-
   // Initialize source from an image URL.
   //
   // The image must be hosted on the Hydra server, or have appropriate CORS headers.
   initImage (url) {
     this.clear();
     var element = document.createElement('img')
-    this._getMediaDiv().appendChild(element);
+    this.mediadiv.appendChild(element);
     element.src = url
     element.crossOrigin = 'anonymous'
     this.src = this.element = element
@@ -98,7 +86,7 @@ class HydraSource  {
     let self = this
     self.clear();
     var element = document.createElement('video')
-    this._getMediaDiv().appendChild(element);
+    this.mediadiv.appendChild(element);
     element.src = url
     element.crossOrigin = 'anonymous'
     element.loop = true
